@@ -218,7 +218,7 @@ class WordPress extends Adapter {
 	 */
 	protected function get_planet_feed_url() {
 		// Translators: Link to the Planet feed of the locale.
-		return \__( 'https://planet.wordpress.org/feed/', 'default' );
+		return \__( 'https://planet.wordpress.org/feed/' );
 	}
 
 	/**
