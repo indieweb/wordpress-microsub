@@ -146,7 +146,8 @@ abstract class Adapter {
 	 * @return bool True if this adapter can handle the URL.
 	 */
 	public function can_handle_url( $url ) {
-		return true; // Default: can handle any URL.
+		return true;
+		// Default: can handle any URL.
 	}
 
 	/**
@@ -159,7 +160,8 @@ abstract class Adapter {
 	 * @return bool True if this adapter owns the feed.
 	 */
 	public function owns_feed( $url ) {
-		return false; // Default: doesn't own any feeds.
+		return false;
+		// Default: doesn't own any feeds.
 	}
 
 	// =========================================================================

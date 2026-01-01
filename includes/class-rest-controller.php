@@ -205,7 +205,7 @@ class Rest_Controller extends \WP_REST_Controller {
 						$action
 					)
 				);
-		}
+		}//end switch
 	}
 
 	/**
@@ -256,7 +256,7 @@ class Rest_Controller extends \WP_REST_Controller {
 						$action
 					)
 				);
-		}
+		}//end switch
 	}
 
 	/**
@@ -383,7 +383,7 @@ class Rest_Controller extends \WP_REST_Controller {
 	 * @param int              $user_id The user ID.
 	 * @return \WP_REST_Response The response.
 	 */
-	protected function get_timeline( $request, $user_id ) {
+	protected function get_timeline( $request, $user_id ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$channel = $request->get_param( 'channel' );
 
 		if ( empty( $channel ) ) {

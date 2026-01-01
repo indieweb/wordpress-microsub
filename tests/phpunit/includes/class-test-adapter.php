@@ -142,4 +142,102 @@ class Test_Adapter extends WP_UnitTestCase {
 		$this->assertEquals( 'test-adapter', $this->adapter->get_id() );
 		$this->assertEquals( 'Test Adapter', $this->adapter->get_name() );
 	}
+
+	/**
+	 * Test get_following filter.
+	 */
+	public function test_get_following_filter() {
+		$this->adapter->register();
+
+		$result = apply_filters( 'microsub_get_following', array(), 'default', 1 );
+
+		$this->assertIsArray( $result );
+		$this->assertCount( 1, $result );
+		$this->assertEquals( 'feed', $result[0]['type'] );
+	}
+
+	/**
+	 * Test unfollow filter.
+	 */
+	public function test_unfollow_filter() {
+		$this->adapter->register();
+
+		$result = apply_filters( 'microsub_unfollow', null, 'default', 'https://example.com', 1 );
+
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * Test multiple adapters are aggregated.
+	 */
+	public function test_multiple_adapters() {
+		$this->adapter->register();
+
+		$second_adapter = new Test_Second_Adapter();
+		$second_adapter->register();
+
+		$adapters = apply_filters( 'microsub_adapters', array() );
+
+		$this->assertCount( 2, $adapters );
+		$this->assertArrayHasKey( 'test-adapter', $adapters );
+		$this->assertArrayHasKey( 'second-adapter', $adapters );
+	}
+
+	/**
+	 * Test channels are aggregated from multiple adapters.
+	 */
+	public function test_channels_aggregation() {
+		$this->adapter->register();
+
+		$second_adapter = new Test_Second_Adapter();
+		$second_adapter->register();
+
+		$channels = apply_filters( 'microsub_get_channels', array(), 1 );
+
+		$this->assertCount( 3, $channels );
+	}
+
+	/**
+	 * Test can_handle_url default implementation.
+	 */
+	public function test_can_handle_url_default() {
+		$this->assertFalse( $this->adapter->can_handle_url( 'https://example.com' ) );
+	}
+
+	/**
+	 * Test owns_feed default implementation.
+	 */
+	public function test_owns_feed_default() {
+		$this->assertFalse( $this->adapter->owns_feed( 'https://example.com/feed' ) );
+	}
+}
+
+class Test_Second_Adapter extends \Microsub\Adapter {
+
+	protected $id = 'second-adapter';
+	protected $name = 'Second Adapter';
+
+	public function get_channels( $channels, $user_id ) {
+		$channels[] = array(
+			'uid'  => 'second-channel',
+			'name' => 'Second Channel',
+		);
+		return $channels;
+	}
+
+	public function get_timeline( $result, $channel, $args ) {
+		return $result;
+	}
+
+	public function get_following( $result, $channel, $user_id ) {
+		return $result;
+	}
+
+	public function follow( $result, $channel, $url, $user_id ) {
+		return $result;
+	}
+
+	public function unfollow( $result, $channel, $url, $user_id ) {
+		return $result;
+	}
 }

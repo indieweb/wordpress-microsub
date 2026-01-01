@@ -3,6 +3,7 @@
 	"core": null,
 	"phpVersion": "8.2",
 	"port": 8686,
+	"testsPort": 8687,
 	"plugins": [
 		".",
 		"https://downloads.wordpress.org/plugin/indieauth.latest-stable.zip"
