@@ -8,64 +8,14 @@
 namespace Microsub\Tests;
 
 use WP_UnitTestCase;
-use Microsub\Adapter;
 
-/**
- * Concrete adapter implementation for testing.
- */
-class Test_Adapter_Implementation extends Adapter {
-
-	protected $id = 'test-adapter';
-	protected $name = 'Test Adapter';
-
-	public function get_channels( $channels, $user_id ) {
-		return array(
-			array(
-				'uid'  => 'notifications',
-				'name' => 'Notifications',
-			),
-			array(
-				'uid'  => 'default',
-				'name' => 'Home',
-			),
-		);
-	}
-
-	public function get_timeline( $result, $channel, $args ) {
-		return array(
-			'items' => array(
-				array(
-					'type' => 'entry',
-					'_id'  => 'test-1',
-					'url'  => 'https://example.com/post/1',
-				),
-			),
-		);
-	}
-
-	public function get_following( $result, $channel, $user_id ) {
-		return array(
-			array(
-				'type' => 'feed',
-				'url'  => 'https://example.com/feed',
-			),
-		);
-	}
-
-	public function follow( $result, $channel, $url, $user_id ) {
-		return array(
-			'type' => 'feed',
-			'url'  => $url,
-		);
-	}
-
-	public function unfollow( $result, $channel, $url, $user_id ) {
-		return true;
-	}
-}
+require_once dirname( __DIR__ ) . '/includes/class-test-adapter-implementation.php';
+require_once dirname( __DIR__ ) . '/includes/class-test-second-adapter.php';
 
 /**
  * Test Adapter class.
+ *
+ * @coversDefaultClass \Microsub\Adapter
  */
 class Test_Adapter extends WP_UnitTestCase {
 
@@ -86,6 +36,9 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test that adapter can be registered.
+	 *
+	 * @covers ::register
+	 * @covers ::register_adapter
 	 */
 	public function test_register_adapter() {
 		$this->adapter->register();
@@ -98,6 +51,8 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test get_channels filter.
+	 *
+	 * @covers ::register
 	 */
 	public function test_get_channels_filter() {
 		$this->adapter->register();
@@ -111,6 +66,8 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test get_timeline filter.
+	 *
+	 * @covers ::register
 	 */
 	public function test_get_timeline_filter() {
 		$this->adapter->register();
@@ -124,6 +81,8 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test follow filter.
+	 *
+	 * @covers ::register
 	 */
 	public function test_follow_filter() {
 		$this->adapter->register();
@@ -137,6 +96,9 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test adapter ID and name getters.
+	 *
+	 * @covers ::get_id
+	 * @covers ::get_name
 	 */
 	public function test_adapter_getters() {
 		$this->assertEquals( 'test-adapter', $this->adapter->get_id() );
@@ -145,6 +107,8 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test get_following filter.
+	 *
+	 * @covers ::register
 	 */
 	public function test_get_following_filter() {
 		$this->adapter->register();
@@ -158,6 +122,8 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test unfollow filter.
+	 *
+	 * @covers ::register
 	 */
 	public function test_unfollow_filter() {
 		$this->adapter->register();
@@ -169,6 +135,9 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test multiple adapters are aggregated.
+	 *
+	 * @covers ::register
+	 * @covers ::register_adapter
 	 */
 	public function test_multiple_adapters() {
 		$this->adapter->register();
@@ -185,6 +154,8 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test channels are aggregated from multiple adapters.
+	 *
+	 * @covers ::register
 	 */
 	public function test_channels_aggregation() {
 		$this->adapter->register();
@@ -199,6 +170,8 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test can_handle_url default implementation.
+	 *
+	 * @covers ::can_handle_url
 	 */
 	public function test_can_handle_url_default() {
 		$this->assertFalse( $this->adapter->can_handle_url( 'https://example.com' ) );
@@ -206,38 +179,10 @@ class Test_Adapter extends WP_UnitTestCase {
 
 	/**
 	 * Test owns_feed default implementation.
+	 *
+	 * @covers ::owns_feed
 	 */
 	public function test_owns_feed_default() {
 		$this->assertFalse( $this->adapter->owns_feed( 'https://example.com/feed' ) );
-	}
-}
-
-class Test_Second_Adapter extends \Microsub\Adapter {
-
-	protected $id = 'second-adapter';
-	protected $name = 'Second Adapter';
-
-	public function get_channels( $channels, $user_id ) {
-		$channels[] = array(
-			'uid'  => 'second-channel',
-			'name' => 'Second Channel',
-		);
-		return $channels;
-	}
-
-	public function get_timeline( $result, $channel, $args ) {
-		return $result;
-	}
-
-	public function get_following( $result, $channel, $user_id ) {
-		return $result;
-	}
-
-	public function follow( $result, $channel, $url, $user_id ) {
-		return $result;
-	}
-
-	public function unfollow( $result, $channel, $url, $user_id ) {
-		return $result;
 	}
 }

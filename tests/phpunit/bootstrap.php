@@ -18,6 +18,7 @@ if ( false !== $_phpunit_polyfills_path ) {
 }
 
 if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI output.
 	echo "Could not find {$_tests_dir}/includes/functions.php, have you run bin/install-wp-tests.sh ?" . PHP_EOL;
 	exit( 1 );
 }
