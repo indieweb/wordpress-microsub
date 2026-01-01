@@ -430,9 +430,12 @@ class Friends extends Adapter {
 			$user_feeds = $friend_user->get_active_feeds();
 
 			foreach ( $user_feeds as $user_feed ) {
+				$feed_url = $user_feed->get_url();
+
 				$feed = array(
 					'type' => 'feed',
-					'url'  => $user_feed->get_url(),
+					'url'  => $feed_url,
+					'_id'  => \md5( $feed_url ),
 				);
 
 				$name = $friend_user->display_name;
