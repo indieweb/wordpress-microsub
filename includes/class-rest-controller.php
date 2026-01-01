@@ -771,7 +771,7 @@ class Rest_Controller extends \WP_REST_Controller {
 				'description' => \__( 'The Microsub action to perform.', 'microsub' ),
 				'type'        => 'string',
 				'required'    => true,
-				'enum'        => array( 'channels', 'timeline', 'follow', 'mute', 'block', 'search', 'preview' ),
+				'enum'        => array( 'channels', 'timeline', 'follow', 'unfollow', 'mute', 'unmute', 'block', 'unblock', 'search', 'preview' ),
 			),
 			'channel' => array(
 				'description' => \__( 'The channel UID.', 'microsub' ),
