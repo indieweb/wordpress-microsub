@@ -145,9 +145,8 @@ abstract class Adapter {
 	 * @param string $url The URL to check.
 	 * @return bool True if this adapter can handle the URL.
 	 */
-	public function can_handle_url( $url ) {
+	public function can_handle_url( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		return true;
-		// Default: can handle any URL.
 	}
 
 	/**
@@ -159,9 +158,8 @@ abstract class Adapter {
 	 * @param string $url The feed URL to check.
 	 * @return bool True if this adapter owns the feed.
 	 */
-	public function owns_feed( $url ) {
+	public function owns_feed( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		return false;
-		// Default: doesn't own any feeds.
 	}
 
 	// =========================================================================
@@ -253,7 +251,7 @@ abstract class Adapter {
 	 * @param int        $user_id The user ID.
 	 * @return array|null Created channel data, or null if not supported.
 	 */
-	public function create_channel( $result, $name, $user_id ) {
+	public function create_channel( $result, $name, $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		return $result;
 	}
 
@@ -266,7 +264,7 @@ abstract class Adapter {
 	 * @param int        $user_id The user ID.
 	 * @return array|null Updated channel data, or null if not supported.
 	 */
-	public function update_channel( $result, $uid, $name, $user_id ) {
+	public function update_channel( $result, $uid, $name, $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		return $result;
 	}
 
@@ -278,7 +276,7 @@ abstract class Adapter {
 	 * @param int       $user_id The user ID.
 	 * @return bool|null True on success, false on failure, null if not supported.
 	 */
-	public function delete_channel( $result, $uid, $user_id ) {
+	public function delete_channel( $result, $uid, $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		return $result;
 	}
 
@@ -290,7 +288,7 @@ abstract class Adapter {
 	 * @param int        $user_id  The user ID.
 	 * @return array|null Reordered channels, or null if not supported.
 	 */
-	public function order_channels( $result, $channels, $user_id ) {
+	public function order_channels( $result, $channels, $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		return $result;
 	}
 

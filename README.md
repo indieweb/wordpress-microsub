@@ -1,6 +1,6 @@
 # Microsub
 
-- Contributors: pfefferle
+- Contributors: pfefferle, indieweb
 - Donate link: https://notiz.blog/donate/
 - Tags: microsub, indieweb, reader, feeds, rss
 - Requires at least: 6.5
