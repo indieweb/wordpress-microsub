@@ -136,7 +136,60 @@ class Friends extends Adapter {
 			}
 		}
 
+		// Get post formats as channels.
+		$post_formats = $this->get_used_post_formats();
+
+		foreach ( $post_formats as $format => $name ) {
+			$channels[] = array(
+				'uid'  => 'format-' . $format,
+				'name' => $name,
+			);
+		}
+
 		return $channels;
+	}
+
+	/**
+	 * Get post formats that are actually used by friend posts.
+	 *
+	 * @return array Associative array of format slug => format name.
+	 */
+	protected function get_used_post_formats() {
+		$formats = array();
+
+		// Get all post format terms that have posts.
+		$terms = \get_terms(
+			array(
+				'taxonomy'   => 'post_format',
+				'hide_empty' => true,
+			)
+		);
+
+		if ( \is_wp_error( $terms ) || empty( $terms ) ) {
+			return $formats;
+		}
+
+		$format_labels = array(
+			'aside'   => \__( 'Asides', 'microsub' ),
+			'audio'   => \__( 'Audio', 'microsub' ),
+			'chat'    => \__( 'Chats', 'microsub' ),
+			'gallery' => \__( 'Galleries', 'microsub' ),
+			'image'   => \__( 'Images', 'microsub' ),
+			'link'    => \__( 'Links', 'microsub' ),
+			'quote'   => \__( 'Quotes', 'microsub' ),
+			'status'  => \__( 'Statuses', 'microsub' ),
+			'video'   => \__( 'Videos', 'microsub' ),
+		);
+
+		foreach ( $terms as $term ) {
+			// Term slug is like 'post-format-aside'.
+			$format = str_replace( 'post-format-', '', $term->slug );
+			if ( isset( $format_labels[ $format ] ) ) {
+				$formats[ $format ] = $format_labels[ $format ];
+			}
+		}
+
+		return $formats;
 	}
 
 	/**
@@ -264,7 +317,7 @@ class Friends extends Adapter {
 			'order'          => 'DESC',
 		);
 
-		// Filter by friend list if not home channel.
+		// Filter by friend list.
 		if ( str_starts_with( $channel, 'list-' ) ) {
 			$slug = substr( $channel, 5 );
 			$term = \get_term_by( 'slug', $slug, 'friend-list' );
@@ -281,6 +334,16 @@ class Friends extends Adapter {
 			}
 
 			$query_args['author__in'] = $friend_users;
+		} elseif ( str_starts_with( $channel, 'format-' ) ) {
+			// Filter by post format.
+			$format = substr( $channel, 7 );
+			$query_args['tax_query'] = array(
+				array(
+					'taxonomy' => 'post_format',
+					'field'    => 'slug',
+					'terms'    => array( 'post-format-' . $format ),
+				),
+			);
 		} elseif ( 'home' !== $channel ) {
 			// Unknown channel, pass to next adapter.
 			return $result;
@@ -370,7 +433,8 @@ class Friends extends Adapter {
 	 * @return array|null Array of friend users or null if unknown channel.
 	 */
 	protected function get_friend_users_for_channel( $channel ) {
-		if ( 'home' === $channel || 'notifications' === $channel ) {
+		// For home, notifications, and format channels, return all friends.
+		if ( 'home' === $channel || 'notifications' === $channel || str_starts_with( $channel, 'format-' ) ) {
 			$query = \Friends\User_Query::all_friends_subscriptions();
 			return $query->get_results();
 		}
