@@ -1,6 +1,7 @@
 # Git
 .git
 .gitignore
+.editorconfig
 
 # GitHub
 .github
