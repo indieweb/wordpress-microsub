@@ -29,6 +29,13 @@ class Microsub {
 	private $initialized = false;
 
 	/**
+	 * Whether adapters have been registered.
+	 *
+	 * @var bool
+	 */
+	private $adapters_registered = false;
+
+	/**
 	 * Get the instance of the class.
 	 *
 	 * @return Microsub
@@ -57,6 +64,7 @@ class Microsub {
 		}
 
 		$this->register_hooks();
+		$this->register_adapters();
 
 		$this->initialized = true;
 	}
@@ -89,6 +97,12 @@ class Microsub {
 	 * Register built-in adapters.
 	 */
 	public function register_adapters() {
+		if ( $this->adapters_registered ) {
+			return;
+		}
+
+		$this->adapters_registered = true;
+
 		// Register WordPress core feeds adapter.
 		$adapter = new Adapters\WordPress();
 		$adapter->register();

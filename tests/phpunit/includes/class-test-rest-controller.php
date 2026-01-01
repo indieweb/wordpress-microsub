@@ -73,15 +73,22 @@ class Test_Rest_Controller extends WP_UnitTestCase {
 	 *
 	 * @covers ::get_channels
 	 */
-	public function test_get_channels_without_adapter() {
+	public function test_get_channels_returns_core_channels() {
 		wp_set_current_user( $this->user_id );
 
 		$request = new WP_REST_Request( 'GET', '/microsub/1.0/endpoint' );
 		$request->set_param( 'action', 'channels' );
 
 		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
 
-		$this->assertEquals( 501, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertArrayHasKey( 'channels', $data );
+		$this->assertNotEmpty( $data['channels'] );
+		$this->assertTrue(
+			in_array( 'wp-dashboard', wp_list_pluck( $data['channels'], 'uid' ), true ),
+			'Expected WordPress core adapter to add wp-dashboard channel'
+		);
 	}
 
 	/**
