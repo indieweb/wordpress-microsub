@@ -163,7 +163,7 @@ class Friends extends Adapter {
 		}
 
 		// Get post formats as channels.
-		$post_formats = $this->get_used_post_formats();
+		$post_formats = $this->get_post_formats();
 
 		foreach ( $post_formats as $format => $name ) {
 			$channels[] = array(
@@ -176,46 +176,19 @@ class Friends extends Adapter {
 	}
 
 	/**
-	 * Get post formats that are actually used by friend posts.
+	 * Get all post formats as channels.
+	 *
+	 * Uses WordPress core get_post_format_strings() and adds 'standard'.
 	 *
 	 * @return array Associative array of format slug => format name.
 	 */
-	protected function get_used_post_formats() {
-		$formats = array();
+	protected function get_post_formats() {
+		$formats = array( 'standard' => \__( 'Standard', 'microsub' ) );
 
-		// Get all post format terms that have posts.
-		$terms = \get_terms(
-			array(
-				'taxonomy'   => 'post_format',
-				'hide_empty' => true,
-			)
-		);
+		// Get formats from WordPress core.
+		$wp_formats = \get_post_format_strings();
 
-		if ( \is_wp_error( $terms ) || empty( $terms ) ) {
-			return $formats;
-		}
-
-		$format_labels = array(
-			'aside'   => \__( 'Asides', 'microsub' ),
-			'audio'   => \__( 'Audio', 'microsub' ),
-			'chat'    => \__( 'Chats', 'microsub' ),
-			'gallery' => \__( 'Galleries', 'microsub' ),
-			'image'   => \__( 'Images', 'microsub' ),
-			'link'    => \__( 'Links', 'microsub' ),
-			'quote'   => \__( 'Quotes', 'microsub' ),
-			'status'  => \__( 'Statuses', 'microsub' ),
-			'video'   => \__( 'Videos', 'microsub' ),
-		);
-
-		foreach ( $terms as $term ) {
-			// Term slug is like 'post-format-aside'.
-			$format = str_replace( 'post-format-', '', $term->slug );
-			if ( isset( $format_labels[ $format ] ) ) {
-				$formats[ $format ] = $format_labels[ $format ];
-			}
-		}
-
-		return $formats;
+		return \array_merge( $formats, $wp_formats );
 	}
 
 	/**
@@ -363,13 +336,24 @@ class Friends extends Adapter {
 		} elseif ( str_starts_with( $channel, 'format-' ) ) {
 			// Filter by post format.
 			$format = substr( $channel, 7 );
-			$query_args['tax_query'] = array(
-				array(
-					'taxonomy' => 'post_format',
-					'field'    => 'slug',
-					'terms'    => array( 'post-format-' . $format ),
-				),
-			);
+
+			if ( 'standard' === $format ) {
+				// Standard = posts without any post format.
+				$query_args['tax_query'] = array(
+					array(
+						'taxonomy' => 'post_format',
+						'operator' => 'NOT EXISTS',
+					),
+				);
+			} else {
+				$query_args['tax_query'] = array(
+					array(
+						'taxonomy' => 'post_format',
+						'field'    => 'slug',
+						'terms'    => array( 'post-format-' . $format ),
+					),
+				);
+			}
 		} elseif ( 'home' !== $channel ) {
 			// Unknown channel, pass to next adapter.
 			return $result;
