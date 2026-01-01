@@ -55,7 +55,8 @@ class WordPress extends Adapter {
 			'name' => \__( 'Planet WordPress', 'microsub' ),
 		);
 
-		foreach ( $this->get_rss_widgets() as $widget ) {
+		$rss_widgets = $this->get_rss_widgets();
+		foreach ( $rss_widgets as $widget ) {
 			$channels[] = array(
 				'uid'  => 'wp-rss-' . $widget['id'],
 				'name' => $widget['name'],
