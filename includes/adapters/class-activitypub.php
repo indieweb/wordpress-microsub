@@ -90,13 +90,57 @@ class ActivityPub extends Adapter {
 			return $channels;
 		}
 
-		// Add ActivityPub channel.
-		$channels[] = array(
-			'uid'  => 'activitypub',
-			'name' => \__( 'ActivityPub', 'microsub' ),
-		);
+		// Get object types that have posts for this user.
+		$terms = $this->get_object_types_for_user( $user_id );
+
+		foreach ( $terms as $term ) {
+			$channels[] = array(
+				'uid'  => 'ap-' . $term->slug,
+				'name' => $term->name,
+			);
+		}
 
 		return $channels;
+	}
+
+	/**
+	 * Get object types that have posts for a user.
+	 *
+	 * @param int $user_id The user ID.
+	 * @return array Array of term objects.
+	 */
+	protected function get_object_types_for_user( $user_id ) {
+		global $wpdb;
+
+		// Get term IDs that have posts for this user.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$term_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT tt.term_id
+				FROM {$wpdb->term_taxonomy} tt
+				INNER JOIN {$wpdb->term_relationships} tr ON tt.term_taxonomy_id = tr.term_taxonomy_id
+				INNER JOIN {$wpdb->posts} p ON tr.object_id = p.ID
+				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+				WHERE tt.taxonomy = 'ap_object_type'
+				AND p.post_type = %s
+				AND pm.meta_key = '_activitypub_user_id'
+				AND pm.meta_value = %s",
+				Posts::POST_TYPE,
+				$user_id
+			)
+		);
+
+		if ( empty( $term_ids ) ) {
+			return array();
+		}
+
+		return \get_terms(
+			array(
+				'taxonomy'   => 'ap_object_type',
+				'include'    => $term_ids,
+				'hide_empty' => false,
+			)
+		);
 	}
 
 	/**
@@ -112,13 +156,14 @@ class ActivityPub extends Adapter {
 			return $result;
 		}
 
-		// Only handle 'activitypub' channel.
-		if ( 'activitypub' !== $channel ) {
+		// Only handle 'ap-*' channels.
+		if ( ! \str_starts_with( $channel, 'ap-' ) ) {
 			return $result;
 		}
 
-		$limit   = isset( $args['limit'] ) ? \absint( $args['limit'] ) : 20;
-		$user_id = \get_current_user_id();
+		$object_type_slug = \substr( $channel, 3 );
+		$limit            = isset( $args['limit'] ) ? \absint( $args['limit'] ) : 20;
+		$user_id          = \get_current_user_id();
 
 		$query_args = array(
 			'post_type'      => Posts::POST_TYPE,
@@ -128,6 +173,13 @@ class ActivityPub extends Adapter {
 			'order'          => 'DESC',
 			'meta_key'       => '_activitypub_user_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 			'meta_value'     => $user_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			'tax_query'      => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+				array(
+					'taxonomy' => 'ap_object_type',
+					'field'    => 'slug',
+					'terms'    => $object_type_slug,
+				),
+			),
 		);
 
 		if ( ! empty( $args['after'] ) ) {
@@ -167,8 +219,8 @@ class ActivityPub extends Adapter {
 			return $result;
 		}
 
-		// Only handle 'activitypub' channel.
-		if ( 'activitypub' !== $channel ) {
+		// Only handle 'ap-*' channels.
+		if ( ! \str_starts_with( $channel, 'ap-' ) ) {
 			return $result;
 		}
 
