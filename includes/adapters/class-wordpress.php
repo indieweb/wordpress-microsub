@@ -55,6 +55,11 @@ class WordPress extends Adapter {
 			'name' => \__( 'WordPress News', 'microsub' ),
 		);
 
+		$channels[] = array(
+			'uid'  => 'wp-events',
+			'name' => \__( 'WordPress Events', 'microsub' ),
+		);
+
 		return $channels;
 	}
 
@@ -67,7 +72,7 @@ class WordPress extends Adapter {
 	 * @return array Timeline data with 'items' and optional 'paging'.
 	 */
 	public function get_timeline( $result, $channel, $args ) {
-		if ( 'wp-dashboard' !== $channel && 'wp-news' !== $channel ) {
+		if ( 'wp-dashboard' !== $channel && 'wp-news' !== $channel && 'wp-events' !== $channel ) {
 			return $result;
 		}
 
@@ -80,7 +85,13 @@ class WordPress extends Adapter {
 			return $result;
 		}
 
-		$events     = $this->get_events_items( $limit );
+		$events = $this->get_events_items( $limit );
+
+		if ( 'wp-events' === $channel ) {
+			$result['items'] = \array_merge( $result['items'], $events );
+			return $result;
+		}
+
 		$combined   = \array_merge( $news_items, $events );
 		$combined   = $this->dedupe_items_by_id( $combined );
 		$combined   = $this->sort_items_by_date( $combined );
@@ -206,34 +217,29 @@ class WordPress extends Adapter {
 
 		$user_id = \get_current_user_id();
 
-		$location = $this->get_events_location( $user_id );
+		$locations = $this->build_event_locations( $user_id );
+		$response  = null;
 
-		$events_response = \wp_get_community_events(
-			array(
-				'number'   => $limit,
-				'location' => $location,
-			)
-		);
+		foreach ( $locations as $location ) {
+			$response = \wp_get_community_events(
+				array(
+					'number'   => $limit,
+					'location' => $location,
+				)
+			);
 
-		if ( \is_wp_error( $events_response ) || empty( $events_response['events'] ) ) {
-			// If location was empty and the first call failed, try again with the default WP.org news locale.
-			if ( empty( $location ) ) {
-				$events_response = \wp_get_community_events(
-					array(
-						'number'   => $limit,
-						'location' => array( 'country' => 'US' ),
-					)
-				);
+			if ( ! \is_wp_error( $response ) && ! empty( $response['events'] ) ) {
+				break;
 			}
 		}
 
-		if ( \is_wp_error( $events_response ) || empty( $events_response['events'] ) ) {
+		if ( \is_wp_error( $response ) || empty( $response['events'] ) ) {
 			return array();
 		}
 
 		$items = array();
 
-		foreach ( $events_response['events'] as $event ) {
+		foreach ( $response['events'] as $event ) {
 			$url       = $event['url'] ?? '';
 			$time      = $event['date'] ?? ( $event['start'] ?? '' );
 			$items[]   = array(
@@ -252,34 +258,81 @@ class WordPress extends Adapter {
 	}
 
 	/**
-	 * Resolve the community events location (user preference or filtered override).
+	 * Build a set of possible locations to try when fetching events.
 	 *
 	 * @param int $user_id Current user ID.
-	 * @return array Location array as accepted by wp_get_community_events.
+	 * @return array[] Array of location arrays.
 	 */
-	protected function get_events_location( $user_id ) {
-		$location = array();
+	protected function build_event_locations( $user_id ) {
+		$locations = array();
 
+		// User-specified location from dashboard widget.
 		if ( $user_id ) {
 			$user_location = \get_user_option( 'community-events-location', $user_id );
-
-			if ( \is_array( $user_location ) ) {
-				$location = $user_location;
+			if ( \is_array( $user_location ) && ! empty( $user_location ) ) {
+				$locations[] = $user_location;
 			}
 		}
 
-		if ( empty( $location ) && \function_exists( 'wp_get_user_location' ) ) {
-			// Falls back to the same geo-IP lookup core uses for the dashboard widget.
-			$location = \wp_get_user_location();
+		// Geo-IP fallback used by core.
+		if ( \function_exists( 'wp_get_user_location' ) ) {
+			$geo = \wp_get_user_location();
+			if ( \is_array( $geo ) && ! empty( $geo ) ) {
+				$locations[] = $geo;
+			}
 		}
 
+		// Locale-based country fallback (e.g., de_DE -> DE).
+		$locale_country = $this->get_locale_country();
+		if ( $locale_country ) {
+			$locations[] = array( 'country' => $locale_country );
+		}
+
+		// Final hard fallback to US to ensure some events show.
+		$locations[] = array( 'country' => 'US' );
+
 		/**
-		 * Filter the location used for WordPress Events.
+		 * Filter the list of locations to try for events.
 		 *
-		 * @param array $location Location array.
-		 * @param int   $user_id  Current user ID.
+		 * @param array[] $locations Location arrays.
+		 * @param int     $user_id   Current user ID.
 		 */
-		return \apply_filters( 'microsub_events_location', $location, $user_id );
+		$locations = \apply_filters( 'microsub_events_locations', $locations, $user_id );
+
+		// Remove duplicates.
+		$unique = array();
+		$seen   = array();
+		foreach ( $locations as $location ) {
+			$key = \wp_json_encode( $location );
+			if ( isset( $seen[ $key ] ) ) {
+				continue;
+			}
+			$seen[ $key ]   = true;
+			$unique[] = $location;
+		}
+
+		return $unique;
+	}
+
+	/**
+	 * Return the country code inferred from the site locale.
+	 *
+	 * @return string|null
+	 */
+	protected function get_locale_country() {
+		if ( ! \function_exists( 'get_locale' ) ) {
+			return null;
+		}
+
+		$locale = \get_locale();
+		if ( empty( $locale ) || false === \strpos( $locale, '_' ) ) {
+			return null;
+		}
+
+		$parts = \explode( '_', $locale );
+		$country = isset( $parts[1] ) ? \strtoupper( $parts[1] ) : null;
+
+		return $country ?: null;
 	}
 
 	/**

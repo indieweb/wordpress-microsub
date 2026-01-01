@@ -85,10 +85,10 @@ class Test_Rest_Controller extends WP_UnitTestCase {
 		$this->assertEquals( 200, $response->get_status() );
 		$this->assertArrayHasKey( 'channels', $data );
 		$this->assertNotEmpty( $data['channels'] );
-		$this->assertTrue(
-			in_array( 'wp-dashboard', wp_list_pluck( $data['channels'], 'uid' ), true ),
-			'Expected WordPress core adapter to add wp-dashboard channel'
-		);
+		$uids = wp_list_pluck( $data['channels'], 'uid' );
+		$this->assertTrue( in_array( 'wp-dashboard', $uids, true ), 'Expected wp-dashboard channel' );
+		$this->assertTrue( in_array( 'wp-news', $uids, true ), 'Expected wp-news channel' );
+		$this->assertTrue( in_array( 'wp-events', $uids, true ), 'Expected wp-events channel' );
 	}
 
 	/**
