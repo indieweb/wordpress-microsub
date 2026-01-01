@@ -38,13 +38,6 @@ class WordPress extends Adapter {
 	protected $news_feed = 'https://wordpress.org/news/feed/';
 
 	/**
-	 * Planet WordPress feed URL.
-	 *
-	 * @var string
-	 */
-	protected $planet_feed = 'https://planet.wordpress.org/feed/';
-
-	/**
 	 * Cached dashboard RSS widgets.
 	 *
 	 * @var array|null
@@ -99,7 +92,8 @@ class WordPress extends Adapter {
 		}
 
 		if ( 'wp-planet' === $channel ) {
-			$result['items'] = \array_merge( $result['items'], $this->get_feed_items( $this->planet_feed, $limit, $channel ) );
+			$planet_url      = $this->get_planet_feed_url();
+			$result['items'] = \array_merge( $result['items'], $this->get_feed_items( $planet_url, $limit, $channel ) );
 			return $result;
 		}
 
@@ -212,6 +206,19 @@ class WordPress extends Adapter {
 
 		$subdomain = \strtolower( \str_replace( '_', '-', $locale ) );
 		return 'https://' . $subdomain . '.wordpress.org/news/feed/';
+	}
+
+	/**
+	 * Get the Planet WordPress feed URL.
+	 *
+	 * Uses __() with 'default' domain so translators can provide a localized
+	 * planet feed URL, matching WordPress core's dashboard_secondary_feed.
+	 *
+	 * @return string
+	 */
+	protected function get_planet_feed_url() {
+		// Translators: Link to the Planet feed of the locale.
+		return \__( 'https://planet.wordpress.org/feed/', 'default' );
 	}
 
 	/**
