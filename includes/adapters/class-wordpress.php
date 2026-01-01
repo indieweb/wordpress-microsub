@@ -38,13 +38,6 @@ class WordPress extends Adapter {
 	protected $news_feed = 'https://wordpress.org/news/feed/';
 
 	/**
-	 * Cached dashboard RSS widgets.
-	 *
-	 * @var array|null
-	 */
-	protected $rss_widgets = null;
-
-	/**
 	 * Get list of channels.
 	 *
 	 * @param array $channels Current channels array from other adapters.
@@ -434,11 +427,7 @@ class WordPress extends Adapter {
 	 * @return array
 	 */
 	protected function get_rss_widgets() {
-		if ( null !== $this->rss_widgets ) {
-			return $this->rss_widgets;
-		}
-
-		$this->rss_widgets = array();
+		$widgets = array();
 
 		/**
 		 * Filter to register dashboard RSS feeds with Microsub.
@@ -452,7 +441,7 @@ class WordPress extends Adapter {
 		if ( \is_array( $plugin_feeds ) ) {
 			foreach ( $plugin_feeds as $feed ) {
 				if ( ! empty( $feed['id'] ) && ! empty( $feed['url'] ) ) {
-					$this->rss_widgets[] = array(
+					$widgets[] = array(
 						'id'   => $feed['id'],
 						'name' => ! empty( $feed['name'] ) ? $feed['name'] : $feed['id'],
 						'url'  => $feed['url'],
@@ -464,38 +453,36 @@ class WordPress extends Adapter {
 		// Also check dashboard_widget_options for user-added RSS widgets.
 		$options = \get_option( 'dashboard_widget_options', array() );
 
-		if ( ! \is_array( $options ) ) {
-			return $this->rss_widgets;
+		if ( \is_array( $options ) ) {
+			foreach ( $options as $widget_id => $settings ) {
+				if ( ! \is_array( $settings ) ) {
+					continue;
+				}
+
+				// Check for feed URL in common keys.
+				$url = null;
+				if ( ! empty( $settings['url'] ) ) {
+					$url = $settings['url'];
+				} elseif ( ! empty( $settings['link'] ) && \filter_var( $settings['link'], \FILTER_VALIDATE_URL ) ) {
+					// 'link' is sometimes the feed URL in older widgets.
+					$url = $settings['link'];
+				}
+
+				if ( ! $url ) {
+					continue;
+				}
+
+				$title = ! empty( $settings['title'] ) ? $settings['title'] : $widget_id;
+
+				$widgets[] = array(
+					'id'   => $widget_id,
+					'name' => $title,
+					'url'  => $url,
+				);
+			}
 		}
 
-		foreach ( $options as $widget_id => $settings ) {
-			if ( ! \is_array( $settings ) ) {
-				continue;
-			}
-
-			// Check for feed URL in common keys.
-			$url = null;
-			if ( ! empty( $settings['url'] ) ) {
-				$url = $settings['url'];
-			} elseif ( ! empty( $settings['link'] ) && \filter_var( $settings['link'], \FILTER_VALIDATE_URL ) ) {
-				// 'link' is sometimes the feed URL in older widgets.
-				$url = $settings['link'];
-			}
-
-			if ( ! $url ) {
-				continue;
-			}
-
-			$title = ! empty( $settings['title'] ) ? $settings['title'] : $widget_id;
-
-			$this->rss_widgets[] = array(
-				'id'   => $widget_id,
-				'name' => $title,
-				'url'  => $url,
-			);
-		}
-
-		return $this->rss_widgets;
+		return $widgets;
 	}
 
 	/**
