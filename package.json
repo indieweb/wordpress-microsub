@@ -1,0 +1,19 @@
+{
+	"name": "microsub",
+	"version": "1.0.0",
+	"description": "A Microsub server reference implementation for WordPress",
+	"scripts": {
+		"wp-env": "wp-env",
+		"start": "wp-env start",
+		"stop": "wp-env stop",
+		"clean": "wp-env clean",
+		"destroy": "wp-env destroy",
+		"test:php": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/plugins/microsub/phpunit.xml.dist'"
+	},
+	"devDependencies": {
+		"@wordpress/env": "^10.0.0"
+	},
+	"engines": {
+		"node": ">=18"
+	}
+}

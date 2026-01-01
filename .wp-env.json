@@ -1,0 +1,19 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/wp-env.json",
+	"core": null,
+	"phpVersion": "8.2",
+	"port": 8686,
+	"plugins": [
+		".",
+		"https://downloads.wordpress.org/plugin/indieauth.latest-stable.zip"
+	],
+	"themes": [],
+	"config": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_LOG": true,
+		"SCRIPT_DEBUG": true
+	},
+	"mappings": {
+		"wp-content/plugins/microsub": "."
+	}
+}
