@@ -89,6 +89,10 @@ class Microsub {
 	 * Register built-in adapters.
 	 */
 	public function register_adapters() {
+		// Register WordPress core feeds adapter.
+		$adapter = new Adapters\WordPress();
+		$adapter->register();
+
 		// Register Friends adapter if Friends plugin is installed.
 		if ( \defined( 'FRIENDS_VERSION' ) ) {
 			$adapter = new Adapters\Friends();

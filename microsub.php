@@ -28,6 +28,7 @@ namespace Microsub;
 \define( 'MICROSUB_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once __DIR__ . '/includes/class-autoloader.php';
+require_once __DIR__ . '/includes/compat.php';
 
 // Register the autoloader.
 Autoloader::register_path( __NAMESPACE__, __DIR__ . '/includes' );
