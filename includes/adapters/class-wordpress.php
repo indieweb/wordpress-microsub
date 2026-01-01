@@ -218,6 +218,7 @@ class WordPress extends Adapter {
 	 */
 	protected function get_planet_feed_url() {
 		// Translators: Link to the Planet feed of the locale.
+		// phpcs:ignore WordPress.WP.I18n.MissingArgDomainDefault -- Using WP Core translation.
 		return \__( 'https://planet.wordpress.org/feed/' );
 	}
 
