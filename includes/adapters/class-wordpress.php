@@ -424,7 +424,11 @@ class WordPress extends Adapter {
 	}
 
 	/**
-	 * Get custom dashboard RSS widgets that use wp_widget_rss_output.
+	 * Get custom dashboard RSS widgets.
+	 *
+	 * Collects feeds from:
+	 * 1. The 'microsub_dashboard_feeds' filter (for plugins to register their feeds)
+	 * 2. The 'dashboard_widget_options' option (for user-added RSS widgets)
 	 *
 	 * @return array
 	 */
@@ -434,13 +438,35 @@ class WordPress extends Adapter {
 		}
 
 		$this->rss_widgets = array();
-		$options           = \get_option( 'dashboard_widget_options', array() );
+
+		/**
+		 * Filter to register dashboard RSS feeds with Microsub.
+		 *
+		 * Plugins can use this to expose their dashboard RSS widgets.
+		 *
+		 * @param array $feeds Array of feeds, each with 'id', 'name', and 'url' keys.
+		 */
+		$plugin_feeds = \apply_filters( 'microsub_dashboard_feeds', array() );
+
+		if ( \is_array( $plugin_feeds ) ) {
+			foreach ( $plugin_feeds as $feed ) {
+				if ( ! empty( $feed['id'] ) && ! empty( $feed['url'] ) ) {
+					$this->rss_widgets[] = array(
+						'id'   => $feed['id'],
+						'name' => ! empty( $feed['name'] ) ? $feed['name'] : $feed['id'],
+						'url'  => $feed['url'],
+					);
+				}
+			}
+		}
+
+		// Also check dashboard_widget_options for user-added RSS widgets.
+		$options = \get_option( 'dashboard_widget_options', array() );
 
 		if ( ! \is_array( $options ) ) {
 			return $this->rss_widgets;
 		}
 
-		// Derive RSS widgets directly from stored options (title/url) even in REST context.
 		foreach ( $options as $widget_id => $settings ) {
 			if ( ! \is_array( $settings ) ) {
 				continue;
