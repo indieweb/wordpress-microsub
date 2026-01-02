@@ -38,6 +38,15 @@ class Test_Rest_Controller extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// Remove all existing adapter hooks to test in isolation.
+		remove_all_filters( 'microsub_adapters' );
+		remove_all_filters( 'microsub_get_channels' );
+		remove_all_filters( 'microsub_get_timeline' );
+		remove_all_filters( 'microsub_get_following' );
+		remove_all_filters( 'microsub_follow' );
+		remove_all_filters( 'microsub_unfollow' );
+		remove_all_filters( 'microsub_timeline_mark_read' );
+
 		global $wp_rest_server;
 		$wp_rest_server = new \WP_REST_Server();
 		$this->server   = $wp_rest_server;

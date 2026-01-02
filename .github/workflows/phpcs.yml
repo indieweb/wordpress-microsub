@@ -24,4 +24,6 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHPCS
-        run: composer lint -- -q --report-checkstyle | cs2pr
+        run: |
+          composer lint -- --report-checkstyle --report-file=phpcs-report.xml || true
+          cs2pr phpcs-report.xml

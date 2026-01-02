@@ -31,6 +31,13 @@ class Test_Adapter extends WP_UnitTestCase {
 	 */
 	public function set_up() {
 		parent::set_up();
+		// Remove all existing adapter hooks to test in isolation.
+		remove_all_filters( 'microsub_adapters' );
+		remove_all_filters( 'microsub_get_channels' );
+		remove_all_filters( 'microsub_get_timeline' );
+		remove_all_filters( 'microsub_get_following' );
+		remove_all_filters( 'microsub_follow' );
+		remove_all_filters( 'microsub_unfollow' );
 		$this->adapter = new Test_Adapter_Implementation();
 	}
 

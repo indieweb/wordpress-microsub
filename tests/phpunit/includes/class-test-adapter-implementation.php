@@ -38,16 +38,20 @@ class Test_Adapter_Implementation extends Adapter {
 	 * @return array Channels.
 	 */
 	public function get_channels( $channels, $user_id ) {
-		return array(
-			array(
-				'uid'  => 'notifications',
-				'name' => 'Notifications',
-			),
-			array(
-				'uid'  => 'default',
-				'name' => 'Home',
-			),
+		if ( ! is_array( $channels ) ) {
+			$channels = array();
+		}
+
+		$channels[] = array(
+			'uid'  => 'notifications',
+			'name' => 'Notifications',
 		);
+		$channels[] = array(
+			'uid'  => 'default',
+			'name' => 'Home',
+		);
+
+		return $channels;
 	}
 
 	/**
