@@ -16,6 +16,7 @@ Thumbs.db
 # Build
 *.log
 *.cache
+*.zip
 
 # PHPUnit
 .phpunit.result.cache
