@@ -82,20 +82,15 @@ class Test_Rest_Controller extends WP_UnitTestCase {
 	 *
 	 * @covers ::get_channels
 	 */
-	public function test_get_channels_returns_core_channels() {
+	public function test_get_channels_returns_501_without_adapter() {
 		wp_set_current_user( $this->user_id );
 
 		$request = new WP_REST_Request( 'GET', '/microsub/1.0/endpoint' );
 		$request->set_param( 'action', 'channels' );
 
 		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
 
-		$this->assertEquals( 200, $response->get_status() );
-		$this->assertArrayHasKey( 'channels', $data );
-		$this->assertNotEmpty( $data['channels'] );
-		$uids = wp_list_pluck( $data['channels'], 'uid' );
-		$this->assertTrue( in_array( 'wp-dashboard', $uids, true ), 'Expected wp-dashboard channel' );
+		$this->assertEquals( 501, $response->get_status() );
 	}
 
 	/**

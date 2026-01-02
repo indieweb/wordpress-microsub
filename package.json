@@ -8,7 +8,7 @@
 		"stop": "wp-env stop",
 		"clean": "wp-env clean",
 		"destroy": "wp-env destroy",
-		"test:php": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/plugins/microsub/phpunit.xml.dist'"
+		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/microsub vendor/bin/phpunit"
 	},
 	"devDependencies": {
 		"@wordpress/env": "^10.0.0"
