@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1544" height="500" viewBox="0 0 1544 500">
+    <path fill="#E6FFF9" d="M0 0h1544v500H0z"/>
+    <!-- Large watermark logo on right -->
+    <g transform="translate(850, -50) scale(3.5)" opacity="0.15">
+        <path fill="#00ccb1" fill-rule="evenodd" d="m141 16 22 22-22 22h-40v12h10a52 52 0 0 1 52 51.1v.9a52 52 0 0 1-52 52H35a4 4 0 0 1-4-4v-36a4 4 0 0 1 4-4h56v-12H81a52 52 0 1 1 0-104h60Zm-28 98a12 12 0 1 1-10.4 18H91v-12h11.6c2-3.6 6-6 10.4-6ZM79 54a12 12 0 0 1 10.4 6H101v12H89.4A12 12 0 1 1 79 54Z"/>
+    </g>
+    <!-- Logo on left -->
+    <g transform="translate(100, 170) scale(0.85)">
+        <path fill="#00ccb1" fill-rule="evenodd" d="m141 16 22 22-22 22h-40v12h10a52 52 0 0 1 52 51.1v.9a52 52 0 0 1-52 52H35a4 4 0 0 1-4-4v-36a4 4 0 0 1 4-4h56v-12H81a52 52 0 1 1 0-104h60Zm-28 98a12 12 0 1 1-10.4 18H91v-12h11.6c2-3.6 6-6 10.4-6ZM79 54a12 12 0 0 1 10.4 6H101v12H89.4A12 12 0 1 1 79 54Z"/>
+    </g>
+    <!-- Text "Microsub" -->
+    <text x="310" y="295" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="500" fill="#3d3d3d">Microsub</text>
+</svg>
