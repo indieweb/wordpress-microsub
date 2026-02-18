@@ -11,7 +11,7 @@
 		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/microsub vendor/bin/phpunit"
 	},
 	"devDependencies": {
-		"@wordpress/env": "^10.0.0"
+		"@wordpress/env": "^11.0.0"
 	},
 	"engines": {
 		"node": ">=18"
