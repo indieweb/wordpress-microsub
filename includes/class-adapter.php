@@ -68,7 +68,7 @@ abstract class Adapter {
 		\add_filter( 'microsub_order_channels', array( $this, 'order_channels' ), $this->priority, 3 );
 
 		// Timeline operations.
-		\add_filter( 'microsub_get_timeline', array( $this, 'get_timeline' ), $this->priority, 3 );
+		\add_filter( 'microsub_get_timeline', array( $this, 'get_timeline' ), $this->priority, 4 );
 		\add_filter( 'microsub_timeline_mark_read', array( $this, 'timeline_mark_read' ), $this->priority, 4 );
 		\add_filter( 'microsub_timeline_mark_unread', array( $this, 'timeline_mark_unread' ), $this->priority, 4 );
 		\add_filter( 'microsub_timeline_remove', array( $this, 'timeline_remove' ), $this->priority, 4 );
@@ -191,6 +191,11 @@ abstract class Adapter {
 	 *
 	 * Results from multiple adapters are merged automatically.
 	 * Return only your adapter's items.
+	 *
+	 * Implementations may accept an optional fourth `$user_id` argument (the user
+	 * the timeline is requested for); it is passed by the `microsub_get_timeline`
+	 * filter. It is kept out of the abstract signature to preserve backwards
+	 * compatibility with existing three-parameter adapters.
 	 *
 	 * @param array  $result  Current result with 'items' from other adapters.
 	 * @param string $channel Channel UID.

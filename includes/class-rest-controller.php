@@ -101,12 +101,7 @@ class Rest_Controller extends \WP_REST_Controller {
 	 * @return bool|\WP_Error True if allowed, WP_Error otherwise.
 	 */
 	protected function check_permission( $request ) {
-		$action = $request->get_param( 'action' );
-
-		if ( empty( $action ) ) {
-			return true;
-		}
-
+		// Authentication is required for every request, regardless of the payload.
 		$user_id = \get_current_user_id();
 
 		if ( ! $user_id ) {
@@ -115,6 +110,13 @@ class Rest_Controller extends \WP_REST_Controller {
 				\__( 'Authentication required.', 'microsub' ),
 				array( 'status' => 401 )
 			);
+		}
+
+		$action = $request->get_param( 'action' );
+
+		// No action yet: the request is authenticated and the handler validates the action.
+		if ( empty( $action ) ) {
+			return true;
 		}
 
 		$required_scope = isset( self::SCOPES[ $action ] ) ? self::SCOPES[ $action ] : 'read';
@@ -150,10 +152,20 @@ class Rest_Controller extends \WP_REST_Controller {
 		 */
 		$scopes = \apply_filters( 'indieauth_scopes', array() );
 
-		// If IndieAuth doesn't provide scopes, check if user is logged in.
-		if ( empty( $scopes ) && \is_user_logged_in() ) {
-			// Grant all scopes to logged-in users without IndieAuth.
-			$scopes = array( 'read', 'follow', 'mute', 'block', 'channels', 'create', 'update', 'delete' );
+		// If IndieAuth doesn't provide scopes, fall back to a capability check so
+		// low-privilege roles (e.g. Subscribers) are not granted write access.
+		if ( empty( $scopes ) ) {
+			/**
+			 * Filters the capability required to use Microsub without IndieAuth-provided scopes.
+			 *
+			 * @param string $capability The required capability. Default 'edit_posts'.
+			 */
+			$capability = \apply_filters( 'microsub_capability', 'edit_posts' );
+
+			if ( \current_user_can( $capability ) ) {
+				// Grant all scopes to sufficiently privileged users without IndieAuth.
+				$scopes = array( 'read', 'follow', 'mute', 'block', 'channels', 'create', 'update', 'delete' );
+			}
 		}
 
 		// 'read' is implied by any scope.
@@ -313,6 +325,10 @@ class Rest_Controller extends \WP_REST_Controller {
 				return Error::not_implemented( \__( 'No adapter provides channel creation.', 'microsub' ) );
 			}
 
+			if ( \is_wp_error( $result ) ) {
+				return $result;
+			}
+
 			return new \WP_REST_Response( $result, 200 );
 		}
 
@@ -330,6 +346,10 @@ class Rest_Controller extends \WP_REST_Controller {
 				return Error::not_implemented( \__( 'No adapter provides channel updating.', 'microsub' ) );
 			}
 
+			if ( \is_wp_error( $result ) ) {
+				return $result;
+			}
+
 			return new \WP_REST_Response( $result, 200 );
 		}
 
@@ -344,6 +364,10 @@ class Rest_Controller extends \WP_REST_Controller {
 
 			if ( null === $result ) {
 				return Error::not_implemented( \__( 'No adapter provides channel deletion.', 'microsub' ) );
+			}
+
+			if ( \is_wp_error( $result ) ) {
+				return $result;
 			}
 
 			if ( false === $result ) {
@@ -364,6 +388,10 @@ class Rest_Controller extends \WP_REST_Controller {
 
 			if ( null === $result ) {
 				return Error::not_implemented( \__( 'No adapter provides channel ordering.', 'microsub' ) );
+			}
+
+			if ( \is_wp_error( $result ) ) {
+				return $result;
 			}
 
 			return new \WP_REST_Response( array( 'channels' => $result ), 200 );
@@ -387,21 +415,34 @@ class Rest_Controller extends \WP_REST_Controller {
 	 * @param int              $user_id The user ID.
 	 * @return \WP_REST_Response The response.
 	 */
-	protected function get_timeline( $request, $user_id ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+	protected function get_timeline( $request, $user_id ) {
 		$channel = $request->get_param( 'channel' );
 
 		if ( empty( $channel ) ) {
 			return Error::invalid_request( \__( 'Missing required parameter: channel', 'microsub' ) );
 		}
 
+		$limit = \absint( $request->get_param( 'limit' ) );
+
+		if ( ! $limit ) {
+			$limit = 20;
+		}
+
+		// Clamp to a sane upper bound to avoid unbounded aggregation.
+		$limit = \min( $limit, 200 );
+
 		$args = array(
 			'after'  => $request->get_param( 'after' ),
 			'before' => $request->get_param( 'before' ),
-			'limit'  => $request->get_param( 'limit' ) ? \absint( $request->get_param( 'limit' ) ) : 20,
+			'limit'  => $limit,
 		);
 
 		// Start with empty result to aggregate from multiple adapters.
-		$result = \apply_filters( 'microsub_get_timeline', array( 'items' => array() ), $channel, $args );
+		$result = \apply_filters( 'microsub_get_timeline', array( 'items' => array() ), $channel, $args, $user_id );
+
+		if ( \is_wp_error( $result ) ) {
+			return $result;
+		}
 
 		if ( empty( $result['items'] ) ) {
 			return new \WP_REST_Response( array( 'items' => array() ), 200 );
@@ -540,6 +581,10 @@ class Rest_Controller extends \WP_REST_Controller {
 
 		if ( null === $result ) {
 			return Error::not_implemented( \__( 'No adapter can handle this URL.', 'microsub' ) );
+		}
+
+		if ( \is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		return new \WP_REST_Response( $result, 200 );
@@ -730,6 +775,10 @@ class Rest_Controller extends \WP_REST_Controller {
 			return Error::not_implemented( \__( 'No adapter provides search support.', 'microsub' ) );
 		}
 
+		if ( \is_wp_error( $result ) ) {
+			return $result;
+		}
+
 		return new \WP_REST_Response( $result, 200 );
 	}
 
@@ -751,6 +800,10 @@ class Rest_Controller extends \WP_REST_Controller {
 
 		if ( null === $result ) {
 			return Error::not_implemented( \__( 'No adapter provides preview support.', 'microsub' ) );
+		}
+
+		if ( \is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		return new \WP_REST_Response( $result, 200 );

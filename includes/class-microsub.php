@@ -68,7 +68,6 @@ class Microsub {
 		}
 
 		$this->register_hooks();
-		$this->register_adapters();
 
 		$this->initialized = true;
 	}
@@ -145,7 +144,7 @@ class Microsub {
 	 */
 	public function http_header() {
 		$endpoint = $this->get_endpoint();
-		\header( \sprintf( 'Link: <%s>; rel="microsub"', \esc_url( $endpoint ) ), false );
+		\header( \sprintf( 'Link: <%s>; rel="microsub"', \esc_url_raw( $endpoint ) ), false );
 	}
 
 	/**

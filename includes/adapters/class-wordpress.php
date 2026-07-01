@@ -100,9 +100,10 @@ class WordPress extends Adapter {
 	 * @param array  $result  Current result with 'items' from other adapters.
 	 * @param string $channel Channel UID.
 	 * @param array  $args    Query arguments (after, before, limit).
+	 * @param int    $user_id The user ID the timeline is requested for.
 	 * @return array Timeline data with 'items' and optional 'paging'.
 	 */
-	public function get_timeline( $result, $channel, $args ) {
+	public function get_timeline( $result, $channel, $args, $user_id = 0 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$limit = isset( $args['limit'] ) ? \absint( $args['limit'] ) : 20;
 
 		// Local blog posts.
@@ -208,7 +209,9 @@ class WordPress extends Adapter {
 			return $result;
 		}
 
-		$results = array();
+		// Preserve results aggregated by earlier adapters.
+		$results = ( \is_array( $result ) && isset( $result['results'] ) ) ? $result['results'] : array();
+
 		foreach ( $posts as $post ) {
 			$results[] = array(
 				'type' => 'feed',

@@ -76,7 +76,7 @@ class Friends extends Adapter {
 		}
 
 		// Try to discover feeds from the URL.
-		$discovered = $friends->feed->discover_feeds( $url );
+		$discovered = $friends->feed->discover_available_feeds( $url );
 
 		return ! \is_wp_error( $discovered ) && ! empty( $discovered );
 	}
@@ -103,7 +103,7 @@ class Friends extends Adapter {
 	 * @return \Friends\User_Feed|null The feed or null if not found.
 	 */
 	protected function get_feed_by_url( $url ) {
-		$friend_users = \Friends\User_Query::all_friends_subscriptions();
+		$friend_users = \Friends\User_Query::all_associated_users();
 
 		foreach ( $friend_users->get_results() as $friend_user ) {
 			if ( ! $friend_user instanceof \Friends\User ) {
@@ -309,9 +309,10 @@ class Friends extends Adapter {
 	 * @param array  $result  Current result with 'items' from other adapters.
 	 * @param string $channel Channel UID.
 	 * @param array  $args    Query arguments (after, before, limit).
+	 * @param int    $user_id The user ID the timeline is requested for.
 	 * @return array Timeline data with 'items' and optional 'paging'.
 	 */
-	public function get_timeline( $result, $channel, $args ) {
+	public function get_timeline( $result, $channel, $args, $user_id = 0 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		if ( ! self::is_available() ) {
 			return $result;
 		}
@@ -466,7 +467,7 @@ class Friends extends Adapter {
 	protected function get_friend_users_for_channel( $channel ) {
 		// For home, notifications, and format channels, return all friends.
 		if ( 'home' === $channel || 'notifications' === $channel || str_starts_with( $channel, 'friends-' ) ) {
-			$query = \Friends\User_Query::all_friends_subscriptions();
+			$query = \Friends\User_Query::all_associated_users();
 			return $query->get_results();
 		}
 
@@ -508,20 +509,77 @@ class Friends extends Adapter {
 	 * @return array|null Feed data on success, null to pass to next adapter.
 	 */
 	public function follow( $result, $channel, $url, $user_id ) {
+		// Respect the "first adapter that can handle the URL wins" contract.
+		if ( null !== $result ) {
+			return $result;
+		}
+
 		if ( ! self::is_available() ) {
 			return $result;
 		}
 
-		// Check if we can handle this URL.
-		if ( ! $this->can_handle_url( $url ) ) {
+		$friends = $this->get_friends();
+		if ( ! $friends || ! isset( $friends->feed ) ) {
+			return $result;
+		}
+
+		// Discover subscribable feeds at the URL.
+		$feeds = $friends->feed->discover_available_feeds( $url );
+
+		if ( \is_wp_error( $feeds ) || empty( $feeds ) ) {
 			return $result;
 			// Pass to next adapter.
 		}
 
-		// Use Friends plugin to subscribe to the URL.
-		$friend_user = \Friends\Subscription::subscribe( $url );
+		// Derive a user login and display name from the discovered feeds.
+		$user_login   = \Friends\User::get_user_login_from_feeds( $feeds );
+		$display_name = \Friends\User::get_display_name_from_feeds( $feeds );
+
+		if ( empty( $user_login ) ) {
+			$user_login = \sanitize_user( (string) \wp_parse_url( $url, \PHP_URL_HOST ), true );
+		}
+
+		if ( empty( $user_login ) ) {
+			return $result;
+		}
+
+		// Pull an avatar and description from the discovered feeds, if available.
+		$avatar      = null;
+		$description = null;
+		foreach ( $feeds as $feed_details ) {
+			if ( ! $avatar && ! empty( $feed_details['avatar'] ) ) {
+				$avatar = $feed_details['avatar'];
+			}
+			if ( ! $description && ! empty( $feed_details['description'] ) ) {
+				$description = $feed_details['description'];
+			}
+		}
+
+		// Create (or fetch) the subscription user.
+		$friend_user = \Friends\User::create( $user_login, 'subscription', $url, $display_name, $avatar, $description );
 
 		if ( \is_wp_error( $friend_user ) ) {
+			return $result;
+		}
+
+		// Subscribe to the discovered feeds (autoselected, or any supported parser).
+		$subscribed = false;
+		foreach ( $feeds as $feed_url => $feed_details ) {
+			$autoselect  = ! empty( $feed_details['autoselect'] );
+			$unsupported = isset( $feed_details['parser'] ) && 'unsupported' === $feed_details['parser'];
+
+			if ( ! $autoselect && $unsupported ) {
+				continue;
+			}
+
+			$subscribed_feed = $friend_user->subscribe( $feed_url, $feed_details );
+
+			if ( ! \is_wp_error( $subscribed_feed ) ) {
+				$subscribed = true;
+			}
+		}
+
+		if ( ! $subscribed ) {
 			return $result;
 		}
 
@@ -603,13 +661,15 @@ class Friends extends Adapter {
 		}
 
 		// Use Friends feed discovery.
-		$discovered = $friends->feed->discover_feeds( $query );
+		$discovered = $friends->feed->discover_available_feeds( $query );
 
 		if ( \is_wp_error( $discovered ) || empty( $discovered ) ) {
-			return array( 'results' => array() );
+			// Nothing to add; preserve results from other adapters.
+			return $result;
 		}
 
-		$results = array();
+		// Preserve results aggregated by earlier adapters.
+		$results = ( \is_array( $result ) && isset( $result['results'] ) ) ? $result['results'] : array();
 
 		foreach ( $discovered as $feed_url => $feed_data ) {
 			$item = array(
@@ -646,7 +706,7 @@ class Friends extends Adapter {
 		}
 
 		// Try to fetch and parse the feed.
-		$discovered = $friends->feed->discover_feeds( $url );
+		$discovered = $friends->feed->discover_available_feeds( $url );
 
 		if ( \is_wp_error( $discovered ) || empty( $discovered ) ) {
 			return $result;

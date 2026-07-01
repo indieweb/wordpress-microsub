@@ -153,9 +153,10 @@ class ActivityPub extends Adapter {
 	 * @param array  $result  Current result with 'items' from other adapters.
 	 * @param string $channel Channel UID.
 	 * @param array  $args    Query arguments (after, before, limit).
+	 * @param int    $user_id The user ID the timeline is requested for.
 	 * @return array Timeline data with 'items' and optional 'paging'.
 	 */
-	public function get_timeline( $result, $channel, $args ) {
+	public function get_timeline( $result, $channel, $args, $user_id = 0 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		if ( ! self::is_available() ) {
 			return $result;
 		}
@@ -270,6 +271,11 @@ class ActivityPub extends Adapter {
 	 * @return array|null Feed data on success, null to pass to next adapter.
 	 */
 	public function follow( $result, $channel, $url, $user_id ) {
+		// Respect the "first adapter that can handle the URL wins" contract.
+		if ( null !== $result ) {
+			return $result;
+		}
+
 		if ( ! self::is_available() ) {
 			return $result;
 		}
@@ -313,14 +319,20 @@ class ActivityPub extends Adapter {
 			return $result;
 		}
 
-		// Use ActivityPub unfollow function.
+		// Use ActivityPub unfollow function. Returns the Undo outbox ID, or 0 when
+		// no matching Follow existed (i.e. this user was not following the actor).
 		$unfollow_result = \Activitypub\unfollow( $actor->ID, $user_id );
 
-		if ( ! \is_wp_error( $unfollow_result ) ) {
-			return true;
+		if ( \is_wp_error( $unfollow_result ) ) {
+			return false;
 		}
 
-		return false;
+		// A falsy result (0) means nothing was actually unfollowed here; pass through.
+		if ( ! $unfollow_result ) {
+			return $result;
+		}
+
+		return true;
 	}
 
 	/**
