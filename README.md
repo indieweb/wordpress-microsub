@@ -4,7 +4,7 @@
 - Donate link: https://notiz.blog/donate/
 - Tags: microsub, indieweb, reader, feeds, rss
 - Requires at least: 6.2
-- Tested up to: 6.9
+- Tested up to: 7.0
 - Stable tag: 1.0.0
 - Requires PHP: 7.4
 - License: GPL-2.0-or-later
