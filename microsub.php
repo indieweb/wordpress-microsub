@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Microsub
- * Plugin URI: https://github.com/pfefferle/wordpress-microsub
+ * Plugin URI: https://github.com/indieweb/wordpress-microsub
  * Description: A Microsub server reference implementation for WordPress. Provides the Microsub API with hooks for reader plugins to integrate via adapters.
  * Version: 1.0.0
  * Author: Matthias Pfefferle
@@ -13,6 +13,7 @@
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Requires Plugins: indieauth
+ * Update URI: https://github.com/indieweb/wordpress-microsub
  *
  * @package Microsub
  */
